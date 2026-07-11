@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Universe</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      background: #0b0b1a;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* --- Фон с мерцающими звёздами (для всех страниц) --- */
+    #stars-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    }
+
+    /* --- Фон для третьей страницы (отдельный canvas) --- */
+    #map-stars-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: none;
+      background: radial-gradient(ellipse at bottom, #0a0e1a 0%, #03050c 100%);
+      pointer-events: none;
+    }
+
+    #map-stars-canvas.active {
+      display: block;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* --- ЭКРАН 1: Приветствие --- */
+    #greeting-screen .greeting-text {
+      font-size: clamp(1.4rem, 5vw, 2.6rem);
+      font-weight: 300;
+      letter-spacing: 3px;
+      line-height: 1.6;
+      text-shadow: 0 0 30px rgba(255, 215, 150, 0.3);
+      margin-bottom: 40px;
+    }
+
+    .text-white {
+      opacity: 0;
+      animation: fadeInText 1.5s ease forwards;
+      animation-delay: 0.5s;
+      display: block;
+    }
+
+    .text-highlight {
+      opacity: 0;
+      animation: fadeInText 1.5s ease forwards;
+      animation-delay: 2.5s;
+      display: block;
+      font-weight: 600;
+      background: linear-gradient(135deg, #f6d365, #fda085);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @keyframes fadeInText {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .btn-start {
+      padding: 16px 48px;
+      border-radius: 60px;
+      border: 1px solid rgba(255, 215, 150, 0.3);
+      background: rgba(255, 215, 150, 0.08);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      font-weight: 400;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.5s ease;
+      opacity: 0;
+      animation: fadeInBtn 1.5s ease forwards;
+      animation-delay: 4.5s;
+      box-shadow: 0 0 40px rgba(255, 215, 150, 0.05);
+      text-transform: uppercase;
+    }
+
+    @keyframes fadeInBtn {
+      0% {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .btn-start:hover {
+      background: rgba(255, 215, 150, 0.18);
+      border-color: rgba(255, 215, 150, 0.6);
+      box-shadow: 0 0 60px rgba(255, 215, 150, 0.15);
+      transform: scale(1.03);
+    }
+
+    /* --- ЭКРАН 2: Луна и данные --- */
+    #moon-screen {
+      gap: 30px;
+      animation: fadeIn 1.5s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.96); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .moon-wrapper {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 0 80px rgba(255, 215, 150, 0.15), 0 0 160px rgba(255, 215, 150, 0.05);
+      animation: moonPulse 4s ease-in-out infinite;
+      border: 2px solid rgba(255, 215, 150, 0.1);
+      background: radial-gradient(circle at 30% 30%, #2a1f0f, #0d0a05);
+      cursor: pointer;
+      transition: transform 0.5s ease;
+    }
+
+    .moon-wrapper:hover {
+      transform: scale(1.05);
+    }
+
+    .moon-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      clip-path: circle(50% at 50% 50%);
+      -webkit-clip-path: circle(50% at 50% 50%);
+    }
+
+    @keyframes moonPulse {
+      0%, 100% { box-shadow: 0 0 80px rgba(255, 215, 150, 0.15), 0 0 160px rgba(255, 215, 150, 0.05); }
+      50% { box-shadow: 0 0 100px rgba(255, 215, 150, 0.25), 0 0 200px rgba(255, 215, 150, 0.08); }
+    }
+
+    .moon-caption {
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      font-weight: 300;
+      letter-spacing: 4px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      width: 100%;
+      max-width: 460px;
+      margin-top: 10px;
+    }
+
+    .info-item {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(4px);
+      border-radius: 20px;
+      padding: 14px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.3s ease;
+      font-size: clamp(0.9rem, 1.6vw, 1.05rem);
+    }
+
+    .info-item:hover {
+      background: rgba(255, 255, 255, 0.07);
+      transform: translateX(4px);
+    }
+
+    .info-icon {
+      font-size: 1.4rem;
+      width: 36px;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    .info-text {
+      text-align: left;
+      line-height: 1.4;
+    }
+
+    .info-text strong {
+      font-weight: 500;
+      color: #f6d365;
+    }
+
+    .info-text .sub {
+      font-size: 0.8rem;
+      opacity: 0.5;
+      display: block;
+      font-weight: 300;
+    }
+
+    /* --- ЭКРАН 3: Карта воспоминаний --- */
+    #map-screen {
+      width: 100%;
+      max-width: 100%;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      display: none;
+      overflow: hidden;
+    }
+
+    #map-screen.active {
+      display: flex;
+    }
+
+    .memory-stars-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    /* --- ЛЕТЯЩИЕ ЗВЁЗДЫ --- */
+    .memory-star {
+      position: absolute;
+      cursor: pointer;
+      z-index: 3;
+      opacity: 1;
+      transition: all 1.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .memory-star.visible {
+      pointer-events: all;
+    }
+
+    .star-dot {
+      width: 6px;
+      height: 6px;
+      background: radial-gradient(circle, #fff 0%, #f6d365 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(246, 211, 101, 0.3);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    .memory-star.big .star-dot {
+      width: 12px;
+      height: 12px;
+      box-shadow: 0 0 40px rgba(246, 211, 101, 0.4), 0 0 80px rgba(246, 211, 101, 0.1);
+    }
+
+    .memory-star.big .star-dot::before {
+      content: '✦';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 30px;
+      color: rgba(255, 215, 150, 0.05);
+      opacity: 0;
+      transition: all 0.5s ease;
+    }
+
+    .memory-star.big:hover .star-dot {
+      transform: scale(4);
+      box-shadow: 0 0 60px rgba(246, 211, 101, 0.6), 0 0 120px rgba(246, 211, 101, 0.2);
+    }
+
+    .memory-star.big:hover .star-dot::before {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .memory-star .star-label {
+      position: absolute;
+      bottom: -45px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      white-space: nowrap;
+      opacity: 0;
+      transition: all 0.4s ease;
+      font-weight: 300;
+      letter-spacing: 1px;
+      text-shadow: 0 0 20px rgba(0,0,0,0.9);
+      pointer-events: none;
+    }
+
+    .memory-star:hover .star-label {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-5px);
+    }
+
+    .star-glow-effect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(246, 211, 101, 0.1) 0%, transparent 70%);
+      opacity: 0;
+      transition: all 0.5s ease;
+      pointer-events: none;
+    }
+
+    .memory-star.big:hover .star-glow-effect {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(2);
+    }
+
+    .memory-star.tiny {
+      pointer-events: none;
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    .memory-star.tiny .star-dot {
+      width: 2px;
+      height: 2px;
+      background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 100%);
+      box-shadow: none;
+    }
+
+    .memory-star.tiny .star-label,
+    .memory-star.tiny .star-glow-effect {
+      display: none;
+    }
+
+    /* --- КАРТОЧКА ВОСПОМИНАНИЯ (оптимизированная) --- */
+    .memory-card {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(20, 20, 40, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 215, 150, 0.15);
+      border-radius: 30px;
+      padding: 35px;
+      max-width: 520px;
+      width: 90%;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 60px rgba(255, 215, 0, 0.05);
+      max-height: 90vh;
+      overflow-y: auto;
+      will-change: transform, opacity;
+    }
+
+    .memory-card::-webkit-scrollbar {
+      width: 0;
+    }
+
+    .memory-card.active {
+      opacity: 1;
+      pointer-events: all;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .memory-card .card-close {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 28px;
+      cursor: pointer;
+      opacity: 0.5;
+      transition: all 0.3s ease;
+      background: none;
+      border: none;
+      color: #fff;
+      z-index: 5;
+    }
+
+    .memory-card .card-close:hover {
+      opacity: 1;
+      transform: rotate(90deg);
+    }
+
+    .memory-card .card-image {
+      width: 100%;
+      max-height: 350px;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .memory-card .card-image img {
+      width: 100%;
+      height: auto;
+      max-height: 350px;
+      object-fit: contain;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .memory-card .card-image .no-image {
+      font-size: 60px;
+      padding: 40px 0;
+      opacity: 0.3;
+    }
+
+    .memory-card .card-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #f6d365, #fda085);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .memory-card .card-text {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .memory-card .card-date {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 8px;
+    }
+
+    .memory-card .card-song {
+      font-size: 14px;
+      color: rgba(255, 215, 150, 0.6);
+      font-style: italic;
+    }
+
+    .card-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 9;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s ease;
+      will-change: opacity;
+    }
+
+    .card-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .btn-to-map {
+      margin-top: 20px;
+      padding: 12px 32px;
+      border-radius: 60px;
+      border: 1px solid rgba(255, 215, 150, 0.3);
+      background: rgba(255, 215, 150, 0.08);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.5s ease;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeInBtn 1.5s ease forwards;
+      animation-delay: 1s;
+    }
+
+    .btn-to-map:hover {
+      background: rgba(255, 215, 150, 0.18);
+      border-color: rgba(255, 215, 150, 0.6);
+      transform: scale(1.05);
+    }
+
+    /* --- ЭКРАН 4: СЕРДЦЕ ИЗ ФОТОГРАФИЙ --- */
+    #heart-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #heart-screen.active { display: flex; }
+
+    .heart-stage {
+      position: relative;
+      width: min(92vw, 720px);
+      height: min(78vh, 620px);
+    }
+
+    .heart-photo {
+      position: absolute;
+      width: clamp(76px, 14vw, 138px);
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 18px rgba(253, 160, 133, 0.22);
+      opacity: 0;
+      will-change: opacity, transform;
+      transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .heart-photo.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1) rotate(var(--rotation));
+    }
+
+    .heart-message {
+      position: fixed;
+      bottom: max(5vh, 28px);
+      left: 50%;
+      z-index: 5;
+      width: 92%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: clamp(1rem, 2.6vw, 1.35rem);
+      font-weight: 500;
+      letter-spacing: 2px;
+      color: #fff;
+      line-height: 1.45;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+      pointer-events: none;
+    }
+
+    .heart-message span {
+      display: inline-block;
+      margin: 0 0.15em;
+      opacity: 0;
+      transform: translateY(14px) scale(0.94);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    .heart-message span.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation: neonPulse 2.6s ease-in-out infinite;
+    }
+
+    @keyframes neonPulse {
+      0%, 100% { text-shadow: 0 0 6px rgba(255, 255, 255, 0.55); }
+      50% { text-shadow: 0 0 14px rgba(255, 255, 255, 0.9); }
+    }
+
+    .btn-to-heart {
+      position: fixed;
+      bottom: max(24px, env(safe-area-inset-bottom));
+      left: 50%;
+      z-index: 8;
+      transform: translateX(-50%);
+      padding: 12px 28px;
+      border-radius: 60px;
+      border: 1px solid rgba(255, 215, 150, 0.35);
+      background: rgba(10, 14, 26, 0.62);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: 0.35s ease;
+    }
+
+    .btn-to-heart:hover {
+      background: rgba(255, 215, 150, 0.18);
+      border-color: rgba(255, 215, 150, 0.7);
+    }
+
+    /* --- Адаптивность --- */
+    @media (min-width: 600px) {
+      .moon-wrapper {
+        width: 280px;
+        height: 280px;
+      }
+      .info-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .memory-star.big .star-dot {
+        width: 16px;
+        height: 16px;
+      }
+      .memory-star .star-label {
+        font-size: 15px;
+      }
+      .memory-card .card-image {
+        max-height: 400px;
+      }
+      .memory-card .card-image img {
+        max-height: 400px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .info-item {
+        padding: 12px 16px;
+        font-size: 0.85rem;
+      }
+      .info-icon {
+        font-size: 1.2rem;
+        width: 28px;
+      }
+      .moon-wrapper {
+        width: 180px;
+        height: 180px;
+      }
+      .memory-star.big .star-dot {
+        width: 10px;
+        height: 10px;
+      }
+      .memory-star .star-label {
+        font-size: 11px;
+        bottom: -30px;
+      }
+      .memory-card {
+        padding: 20px;
+      }
+      .memory-card .card-image {
+        max-height: 250px;
+      }
+      .memory-card .card-image img {
+        max-height: 250px;
+      }
+    }
+
+    #bg-music {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ОСНОВНОЙ ФОН (для первых двух страниц) -->
+  <canvas id="stars-canvas"></canvas>
+
+  <!-- ФОН ДЛЯ ТРЕТЬЕЙ СТРАНИЦЫ -->
+  <canvas id="map-stars-canvas"></canvas>
+
+  <audio id="bg-music" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="container">
+
+    <!-- ЭКРАН 1: Приветствие -->
+    <div id="greeting-screen" class="screen active">
+      <div class="greeting-text">
+        <span class="text-white">у каждой звезды есть своя история..</span>
+        <span class="text-highlight">наша — моя любимая</span>
+      </div>
+      <button class="btn-start" id="startBtn">открыть воспоминания</button>
+    </div>
+
+    <!-- ЭКРАН 2: Луна -->
+    <div id="moon-screen" class="screen">
+      <div class="moon-wrapper" id="moonWrapper">
+        <img src="moon1.png" alt="Наша Луна" id="moonPhoto" />
+      </div>
+      <div class="moon-caption">Этот момент навсегда остался среди звезд</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-icon">🌙</span>
+          <span class="info-text">
+            <strong>Фаза Луны</strong>
+            <span class="sub">🌖 Убывающая (92% освещённости)</span>
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">✨</span>
+          <span class="info-text">
+            <strong>Созвездия</strong>
+            <span class="sub">Луна проходила через созвездие Близнецов.</span>
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">📍</span>
+          <span class="info-text">
+            <strong>Место</strong>
+            <span class="sub">нашего первого "мы"</span>
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">📅</span>
+          <span class="info-text">
+            <strong>Дата и время</strong>
+            <span class="sub">20 августа 2025, 3:35</span>
+          </span>
+        </div>
+      </div>
+      <button class="btn-to-map" id="toMapBtn">продолжить ♥</button>
+    </div>
+
+  </div>
+
+  <!-- ЭКРАН 3: Карта воспоминаний -->
+  <div id="map-screen">
+    <div class="memory-stars-container" id="starsContainer"></div>
+    <button class="btn-to-heart" id="toHeartBtn">продолжить ♥</button>
+  </div>
+
+  <div id="heart-screen">
+    <div class="heart-stage" id="heartStage" aria-label="Сердце из фотографий"></div>
+    <div class="heart-message" id="heartMessage"></div>
+  </div>
+
+  <!-- Затемнение -->
+  <div class="card-overlay" id="cardOverlay"></div>
+
+  <!-- Карточка воспоминания -->
+  <div class="memory-card" id="memoryCard">
+    <button class="card-close" id="cardClose">✕</button>
+    <div class="card-image" id="cardImage"></div>
+    <div class="card-title" id="cardTitle">Название</div>
+    <div class="card-text" id="cardText">Текст воспоминания</div>
+    <div class="card-date" id="cardDate">📅 Дата</div>
+    <div class="card-song" id="cardSong">🎵 Наша песня</div>
+  </div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      // --- DOM ---
+      const greetingScreen = document.getElementById('greeting-screen');
+      const moonScreen = document.getElementById('moon-screen');
+      const mapScreen = document.getElementById('map-screen');
+      const heartScreen = document.getElementById('heart-screen');
+      const startBtn = document.getElementById('startBtn');
+      const toMapBtn = document.getElementById('toMapBtn');
+      const toHeartBtn = document.getElementById('toHeartBtn');
+      const moonWrapper = document.getElementById('moonWrapper');
+      const heartStage = document.getElementById('heartStage');
+      const heartMessage = document.getElementById('heartMessage');
+      const starsContainer = document.getElementById('starsContainer');
+      const memoryCard = document.getElementById('memoryCard');
+      const cardOverlay = document.getElementById('cardOverlay');
+      const cardClose = document.getElementById('cardClose');
+      const cardImage = document.getElementById('cardImage');
+      const cardTitle = document.getElementById('cardTitle');
+      const cardText = document.getElementById('cardText');
+      const cardDate = document.getElementById('cardDate');
+      const cardSong = document.getElementById('cardSong');
+      const audio = document.getElementById('bg-music');
+
+      // --- ДАННЫЕ ВОСПОМИНАНИЙ ---
+      const memories = [
+        {
+          id: 0,
+          title: 'Первое расстояние',
+          text: 'Когда все только начиналось, нас разделило расстояние. Тогда мы еще не знали, что любовь - это не только встречи, но и умение ждать.',
+          date: '21 августа 2025',
+          song: 'Guf - Дай мне руку',
+          image: 'photo1.jpg'
+        },
+        {
+          id: 1,
+          title: 'Первая фотография',
+          text: 'Наша первая и до сих пор моя самая любимая фотография. Каждый вечер перед сном я открывал именно ее, потому что она напоминала мне о тебе.',
+          date: '7 января 2026',
+          song: 'The Walters - I love you so',
+          image: 'photo2.jpg'
+        },
+        {
+          id: 2,
+          title: 'Первый подарок',
+          text: 'Твой первый подарок для меня. Я до сих пор храню его, потому что оцень ценю все, что ты делаешь для меня. Но самый лучший подарок в моей жизни - это ты.',
+          date: '12 сентября 2025',
+          song: 'Lana Del Rey',
+          image: 'photo3.jpg'
+        },
+        {
+          id: 3,
+          title: 'Первый букет',
+          text: 'Это мой первый подаренный букет тебе. Я долго выбирал его и очень переживал, понравится ли он тебе, ведь мне очень хотелось сделать тебе приятно.',
+          date: '2 января 2026',
+          song: 'Баста - любовь без памяти',
+          image: 'photo4.jpg'
+        },
+        {
+          id: 4,
+          title: 'Первая любовь',
+          text: 'Ты - моя первая настоящая и искрення любовь. Именно ты показала мне, что смысл жизни именно - в любви, а значит и в тебе.',
+          date: 'Every day and forever.',
+          song: 'Каспийский Груз - Любовь HD1080',
+          image: 'photo5.jpg'
+        },
+        {
+          id: 5,
+          title: 'Первые чувства',
+          text: 'Именно в этот период у меня начали появляться чувства к тебе. каждая наша репетиция становилась для меня особенной, и с каждым разом я все больше понимал, что влюбляюсь в тебя.',
+          date: '14 февраля 2025',
+          song: 'Баста - Выпускной(Медлячок)',
+          image: 'photo6.jpg'
+        },
+        {
+          id: 6,
+          title: 'Любимое воспоминание',
+          text: 'Каждое мое воспоминание с тобой самое любимое. Спасибо тебе за то, что делаешь мой мир ярче, а каждый мой день счастливее.',
+          date: '∞',
+          song: 'Stephen Sanchez - Until I Found You',
+          image: 'photo7.jpg'
+        }
+      ];
+
+      // --- ПЕРЕКЛЮЧЕНИЕ ФОНА ДЛЯ ТРЕТЬЕЙ СТРАНИЦЫ ---
+      const mapStarsCanvas = document.getElementById('map-stars-canvas');
+      const mapCtx = mapStarsCanvas.getContext('2d');
+
+      function activateMapBackground() {
+        mapStarsCanvas.classList.add('active');
+        if (!mapBackgroundRunning) {
+          mapBackgroundRunning = true;
+          animateMapBackground();
+        }
+      }
+
+      function deactivateMapBackground() {
+        mapStarsCanvas.classList.remove('active');
+        mapBackgroundRunning = false;
+      }
+
+      // --- ФОН ДЛЯ ТРЕТЬЕЙ СТРАНИЦЫ (анимированный космос) ---
+      let mapWidth, mapHeight;
+      let mapMouseX = 0.5, mapMouseY = 0.5;
+      let mapTargetX = 0.5, mapTargetY = 0.5;
+      let mapBackgroundRunning = false;
+
+      function resizeMapBackground() {
+        mapWidth = window.innerWidth;
+        mapHeight = window.innerHeight;
+        mapStarsCanvas.width = mapWidth;
+        mapStarsCanvas.height = mapHeight;
+      }
+      window.addEventListener('resize', resizeMapBackground);
+      resizeMapBackground();
+
+      document.addEventListener('mousemove', function(e) {
+        mapTargetX = e.clientX / mapWidth;
+        mapTargetY = e.clientY / mapHeight;
+      });
+
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 0) {
+          mapTargetX = e.touches[0].clientX / mapWidth;
+          mapTargetY = e.touches[0].clientY / mapHeight;
+        }
+      }, { passive: true });
+
+      // Звёзды для фона третьей страницы
+      let mapStars = [];
+      const MAP_STAR_COUNT = 280;
+
+      class MapStar {
+        constructor() {
+          this.baseX = Math.random() * mapWidth;
+          this.baseY = Math.random() * mapHeight;
+          this.x = this.baseX;
+          this.y = this.baseY;
+          this.size = Math.random() * 2.2 + 0.3;
+          
+          const colors = [
+            'rgba(255, 255, 255, ',
+            'rgba(200, 220, 255, ',
+            'rgba(255, 235, 200, ',
+            'rgba(255, 200, 200, '
+          ];
+          this.colorBase = colors[Math.floor(Math.random() * colors.length)];
+          
+          this.speed = (Math.random() * 0.2 + 0.05) * 0.5;
+          this.opacity = Math.random() * 0.8 + 0.2;
+          this.twinkleSpeed = Math.random() * 0.025 + 0.01;
+          this.phase = Math.random() * Math.PI * 2;
+          this.depth = Math.random() * 0.6 + 0.4;
+          this.glow = this.size > 1.6;
+        }
+        update(mouseX, mouseY) {
+          const offsetX = (mouseX - 0.5) * 2 * this.depth * 60;
+          const offsetY = (mouseY - 0.5) * 2 * this.depth * 40;
+          this.x = this.baseX + offsetX;
+          this.y = this.baseY + offsetY;
+          this.phase += this.twinkleSpeed;
+          this.baseY += this.speed;
+          if (this.baseY > mapHeight + 50) {
+            this.baseY = -50;
+            this.baseX = Math.random() * mapWidth;
+          }
+        }
+        draw(ctx) {
+          const flicker = 0.6 + 0.4 * Math.sin(this.phase);
+          const alpha = this.opacity * flicker;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = this.colorBase + alpha + ')';
+          ctx.fill();
+          if (this.glow) {
+            ctx.shadowColor = this.colorBase + (alpha * 0.2) + ')';
+            ctx.shadowBlur = 12;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+          if (this.size > 2.0 && Math.random() < 0.002) {
+            ctx.strokeStyle = this.colorBase + (alpha * 0.15) + ')';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(this.x - this.size * 2.5, this.y);
+            ctx.lineTo(this.x + this.size * 2.5, this.y);
+            ctx.moveTo(this.x, this.y - this.size * 2.5);
+            ctx.lineTo(this.x, this.y + this.size * 2.5);
+            ctx.stroke();
+          }
+        }
+      }
+
+      let mapTinyStars = [];
+
+      class MapTinyStar {
+        constructor() {
+          this.baseX = Math.random() * mapWidth;
+          this.baseY = Math.random() * mapHeight;
+          this.x = this.baseX;
+          this.y = this.baseY;
+          this.size = Math.random() * 0.5 + 0.1;
+          this.opacity = Math.random() * 0.4 + 0.1;
+          this.phase = Math.random() * Math.PI * 2;
+          this.depth = Math.random() * 0.3 + 0.1;
+        }
+        update(mouseX, mouseY) {
+          const offsetX = (mouseX - 0.5) * 2 * this.depth * 80;
+          const offsetY = (mouseY - 0.5) * 2 * this.depth * 50;
+          this.x = this.baseX + offsetX;
+          this.y = this.baseY + offsetY;
+          this.phase += 0.02;
+        }
+        draw(ctx) {
+          const alpha = this.opacity * (0.5 + 0.5 * Math.sin(this.phase));
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200, 210, 255, ${alpha})`;
+          ctx.fill();
+        }
+      }
+
+      let mapShootingStars = [];
+
+      class MapShootingStar {
+        constructor() {
+          this.reset();
+        }
+        reset() {
+          this.x = Math.random() * mapWidth * 0.8 + mapWidth * 0.1;
+          this.y = Math.random() * mapHeight * 0.3;
+          this.length = Math.random() * 60 + 30;
+          this.speed = Math.random() * 6 + 3;
+          this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+          this.opacity = 1;
+          this.active = false;
+          this.timer = Math.random() * 400 + 200;
+        }
+        update() {
+          if (!this.active) {
+            this.timer--;
+            if (this.timer <= 0) {
+              this.active = true;
+              this.reset();
+              this.x = Math.random() * mapWidth * 0.8 + mapWidth * 0.1;
+              this.y = Math.random() * mapHeight * 0.3;
+            }
+            return;
+          }
+          this.x += Math.cos(this.angle) * this.speed;
+          this.y += Math.sin(this.angle) * this.speed;
+          this.opacity -= 0.008;
+          if (this.opacity <= 0 || this.x > mapWidth || this.y > mapHeight) {
+            this.active = false;
+            this.timer = Math.random() * 300 + 100;
+            this.opacity = 1;
+          }
+        }
+        draw(ctx) {
+          if (!this.active) return;
+          const grad = ctx.createLinearGradient(
+            this.x, this.y,
+            this.x - Math.cos(this.angle) * this.length,
+            this.y - Math.sin(this.angle) * this.length
+          );
+          grad.addColorStop(0, `rgba(255, 255, 255, ${this.opacity})`);
+          grad.addColorStop(0.3, `rgba(255, 240, 200, ${this.opacity * 0.5})`);
+          grad.addColorStop(1, `rgba(255, 255, 255, 0)`);
+          
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.y);
+          ctx.lineTo(
+            this.x - Math.cos(this.angle) * this.length,
+            this.y - Math.sin(this.angle) * this.length
+          );
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
+
+      function initMapStars() {
+        mapStars = [];
+        for (let i = 0; i < MAP_STAR_COUNT; i++) {
+          mapStars.push(new MapStar());
+        }
+        mapTinyStars = [];
+        for (let i = 0; i < 150; i++) {
+          mapTinyStars.push(new MapTinyStar());
+        }
+        mapShootingStars = [];
+        for (let i = 0; i < 3; i++) {
+          const s = new MapShootingStar();
+          s.timer = Math.random() * 300 + i * 150;
+          mapShootingStars.push(s);
+        }
+      }
+      initMapStars();
+
+      function animateMapBackground() {
+        if (!mapBackgroundRunning) return;
+
+        mapMouseX += (mapTargetX - mapMouseX) * 0.05;
+        mapMouseY += (mapTargetY - mapMouseY) * 0.05;
+
+        mapCtx.clearRect(0, 0, mapWidth, mapHeight);
+        
+        const grad = mapCtx.createRadialGradient(mapWidth/2, mapHeight/2, 0, mapWidth/2, mapHeight/2, mapWidth*0.7);
+        grad.addColorStop(0, 'rgba(30, 40, 60, 0.2)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        mapCtx.fillStyle = grad;
+        mapCtx.fillRect(0, 0, mapWidth, mapHeight);
+
+        for (const star of mapTinyStars) {
+          star.update(mapMouseX, mapMouseY);
+          star.draw(mapCtx);
+        }
+
+        for (const star of mapStars) {
+          star.update(mapMouseX, mapMouseY);
+          star.draw(mapCtx);
+        }
+
+        for (const s of mapShootingStars) {
+          s.update();
+          s.draw(mapCtx);
+        }
+
+        requestAnimationFrame(animateMapBackground);
+      }
+
+      // --- ПЕРЕХОД НА КАРТУ ---
+      function switchToMapScreen() {
+        moonScreen.classList.remove('active');
+        mapScreen.classList.add('active');
+        activateMapBackground();
+        generateFallingStars();
+        
+        setTimeout(() => {
+          document.querySelectorAll('.memory-star:not(.tiny)').forEach((star, i) => {
+            setTimeout(() => {
+              star.style.opacity = '1';
+              star.style.transform = 'scale(1)';
+            }, i * 500 + 300);
+          });
+        }, 300);
+      }
+
+      function switchToHeartScreen() {
+        mapScreen.classList.remove('active');
+        heartScreen.classList.add('active');
+        heartStage.innerHTML = '';
+
+        // Можешь заменить слова здесь на свою фразу.
+        const heartWords = 'Какой бы огромной ни была наша вселенная, моя любовь к тебе всегда будет больше, ведь весь мой мир — в твоих глазах'.split(' ');
+        heartMessage.innerHTML = heartWords.map(word => `<span>${word}</span>`).join('');
+
+        const photoCount = 30;
+        for (let i = 0; i < photoCount; i++) {
+          const t = (Math.PI * 2 * i) / photoCount;
+          const x = 16 * Math.pow(Math.sin(t), 3);
+          const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+          const photo = document.createElement('img');
+          photo.className = 'heart-photo';
+          photo.src = `heart${i + 1}.jpg`;
+          photo.alt = 'Наша фотография';
+          photo.style.left = (50 + x * 2.25) + '%';
+          photo.style.top = (45 + y * 2.2) + '%';
+          photo.style.setProperty('--rotation', ((Math.random() - 0.5) * 16) + 'deg');
+          photo.style.transform = 'translate(-50%, -50%) scale(0.35) rotate(var(--rotation))';
+          heartStage.appendChild(photo);
+          setTimeout(() => photo.classList.add('visible'), 250 + i * 85);
+        }
+
+        heartMessage.querySelectorAll('span').forEach((word, i) => {
+          setTimeout(() => word.classList.add('visible'), 1200 + i * 380);
+        });
+      }
+
+      // --- ГЕНЕРАЦИЯ ЛЕТЯЩИХ ЗВЁЗД ---
+      function generateFallingStars() {
+        starsContainer.innerHTML = '';
+
+        const targetPositions = [];
+        const minDistance = 18;
+
+        function getTargetPosition() {
+          let attempts = 0;
+          while (attempts < 100) {
+            const x = 5 + Math.random() * 90;
+            const y = 5 + Math.random() * 90;
+            
+            let tooClose = false;
+            for (const pos of targetPositions) {
+              const dx = Math.abs(pos.x - x);
+              const dy = Math.abs(pos.y - y);
+              const distance = Math.sqrt(dx*dx + dy*dy);
+              if (distance < minDistance) {
+                tooClose = true;
+                break;
+              }
+            }
+            
+            if (!tooClose) {
+              return { x, y };
+            }
+            attempts++;
+          }
+          return { x: 5 + Math.random() * 90, y: 5 + Math.random() * 90 };
+        }
+
+        for (let i = 0; i < memories.length; i++) {
+          const pos = getTargetPosition();
+          targetPositions.push(pos);
+        }
+
+        memories.forEach((memory, index) => {
+          const star = document.createElement('div');
+          star.className = 'memory-star big';
+          star.dataset.index = index;
+
+          const side = Math.floor(Math.random() * 4);
+          let startX, startY;
+          
+          switch(side) {
+            case 0: startX = 5 + Math.random() * 90; startY = -10 - Math.random() * 30; break;
+            case 1: startX = 110 + Math.random() * 30; startY = 5 + Math.random() * 90; break;
+            case 2: startX = 5 + Math.random() * 90; startY = 110 + Math.random() * 30; break;
+            case 3: startX = -10 - Math.random() * 30; startY = 5 + Math.random() * 90; break;
+          }
+
+          star.style.left = startX + '%';
+          star.style.top = startY + '%';
+          star.style.opacity = '0';
+          star.style.transform = 'scale(0.3)';
+          star.style.pointerEvents = 'none';
+
+          star.innerHTML = `
+            <div class="star-dot"></div>
+            <div class="star-glow-effect"></div>
+            <div class="star-label">${memory.title}</div>
+          `;
+
+          star.addEventListener('click', () => openMemory(index));
+          starsContainer.appendChild(star);
+        });
+
+        const tinyPositions = [];
+        for (let i = 0; i < 40; i++) {
+          let attempts = 0;
+          let x, y, tooClose;
+          do {
+            x = 2 + Math.random() * 96;
+            y = 2 + Math.random() * 96;
+            tooClose = false;
+            
+            for (const pos of targetPositions) {
+              const dx = Math.abs(pos.x - x);
+              const dy = Math.abs(pos.y - y);
+              const distance = Math.sqrt(dx*dx + dy*dy);
+              if (distance < 8) {
+                tooClose = true;
+                break;
+              }
+            }
+            
+            if (!tooClose) {
+              for (const pos of tinyPositions) {
+                const dx = Math.abs(pos.x - x);
+                const dy = Math.abs(pos.y - y);
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                if (distance < 6) {
+                  tooClose = true;
+                  break;
+                }
+              }
+            }
+            
+            attempts++;
+            if (attempts > 50) break;
+          } while (tooClose);
+          
+          tinyPositions.push({ x, y });
+
+          const tiny = document.createElement('div');
+          tiny.className = 'memory-star tiny';
+          tiny.style.position = 'absolute';
+          
+          const side = Math.floor(Math.random() * 4);
+          let startX, startY;
+          switch(side) {
+            case 0: startX = Math.random() * 100; startY = -5 - Math.random() * 15; break;
+            case 1: startX = 105 + Math.random() * 15; startY = Math.random() * 100; break;
+            case 2: startX = Math.random() * 100; startY = 105 + Math.random() * 15; break;
+            case 3: startX = -5 - Math.random() * 15; startY = Math.random() * 100; break;
+          }
+          
+          tiny.style.left = startX + '%';
+          tiny.style.top = startY + '%';
+          tiny.style.opacity = '0';
+          tiny.style.transform = 'scale(0.3)';
+          tiny.style.pointerEvents = 'none';
+          tiny.innerHTML = `<div class="star-dot"></div>`;
+          starsContainer.appendChild(tiny);
+        }
+
+        setTimeout(() => {
+          const bigStars = document.querySelectorAll('.memory-star.big');
+          const tinyStars = document.querySelectorAll('.memory-star.tiny');
+
+          bigStars.forEach((star, i) => {
+            const pos = targetPositions[i] || { x: 50, y: 50 };
+            const delay = i * 500 + 300;
+
+            setTimeout(() => {
+              star.style.left = pos.x + '%';
+              star.style.top = pos.y + '%';
+              star.style.opacity = '1';
+              star.style.transform = 'scale(1)';
+              star.style.pointerEvents = 'all';
+              star.classList.add('visible');
+            }, delay);
+          });
+
+          tinyStars.forEach((star, i) => {
+            const pos = tinyPositions[i] || { x: 50, y: 50 };
+            const delay = 300 + Math.random() * 1000 + (i % 3) * 200;
+
+            setTimeout(() => {
+              star.style.left = pos.x + '%';
+              star.style.top = pos.y + '%';
+              star.style.opacity = '0.15';
+              star.style.transform = 'scale(0.3)';
+            }, delay);
+          });
+
+        }, 100);
+      }
+
+      // --- ОТКРЫТИЕ КАРТОЧКИ (оптимизированное) ---
+      let isCardOpen = false;
+
+      function openMemory(index) {
+        if (isCardOpen) return;
+        isCardOpen = true;
+        
+        const memory = memories[index];
+        
+        const stars = document.querySelectorAll('.memory-star.big');
+        stars.forEach((star, i) => {
+          if (i === index) {
+            star.style.transform = 'scale(5)';
+            star.style.zIndex = '5';
+            const dot = star.querySelector('.star-dot');
+            if (dot) {
+              dot.style.boxShadow = '0 0 80px rgba(246, 211, 101, 0.8), 0 0 160px rgba(246, 211, 101, 0.3)';
+            }
+            const glow = star.querySelector('.star-glow-effect');
+            if (glow) {
+              glow.style.opacity = '1';
+              glow.style.transform = 'translate(-50%, -50%) scale(4)';
+            }
+            setTimeout(() => {
+              star.style.transform = 'scale(3)';
+            }, 300);
+          } else {
+            star.style.opacity = '0.15';
+            star.style.transform = 'scale(0.5)';
+          }
+        });
+
+        // Заполняем карточку ДО появления
+        if (memory.image) {
+          if (memory.image.match(/\.(jpg|jpeg|png|gif|webp)$/i) || memory.image.startsWith('http')) {
+            cardImage.innerHTML = `<img src="${memory.image}" alt="${memory.title}" loading="lazy" />`;
+          } else {
+            cardImage.innerHTML = `<div class="no-image">${memory.image}</div>`;
+          }
+        } else {
+          cardImage.innerHTML = `<div class="no-image">📷</div>`;
+        }
+        
+        cardTitle.textContent = memory.title;
+        cardText.textContent = memory.text;
+        cardDate.textContent = '📅 ' + memory.date;
+        cardSong.textContent = '🎵 ' + memory.song;
+        
+        // Показываем карточку с небольшой задержкой
+        requestAnimationFrame(() => {
+          cardOverlay.classList.add('active');
+          setTimeout(() => {
+            memoryCard.classList.add('active');
+          }, 50);
+        });
+      }
+
+      // --- ЗАКРЫТИЕ КАРТОЧКИ (оптимизированное) ---
+      function closeCard() {
+        if (!isCardOpen) return;
+        isCardOpen = false;
+        
+        memoryCard.classList.remove('active');
+        cardOverlay.classList.remove('active');
+        
+        const stars = document.querySelectorAll('.memory-star.big');
+        stars.forEach((star, i) => {
+          star.style.transform = 'scale(1)';
+          star.style.opacity = '1';
+          star.style.zIndex = '3';
+          const dot = star.querySelector('.star-dot');
+          if (dot) {
+            dot.style.boxShadow = '';
+          }
+          const glow = star.querySelector('.star-glow-effect');
+          if (glow) {
+            glow.style.opacity = '0';
+            glow.style.transform = 'translate(-50%, -50%) scale(1)';
+          }
+        });
+      }
+
+      cardClose.addEventListener('click', closeCard);
+      cardOverlay.addEventListener('click', closeCard);
+
+      // --- ПЕРЕХОДЫ ---
+      startBtn.addEventListener('click', function() {
+        greetingScreen.classList.remove('active');
+        moonScreen.classList.add('active');
+        if (audio.paused) {
+          audio.play().catch(() => {});
+        }
+      });
+
+      moonWrapper.addEventListener('click', function() {
+        this.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          this.style.transform = 'scale(1)';
+        }, 200);
+      });
+
+      toMapBtn.addEventListener('click', switchToMapScreen);
+      toHeartBtn.addEventListener('click', switchToHeartScreen);
+
+      // --- ОСНОВНОЙ ФОН (для первых двух страниц) ---
+      const starsCanvas = document.getElementById('stars-canvas');
+      const ctx = starsCanvas.getContext('2d');
+      let width, height;
+      let mouseX = 0.5, mouseY = 0.5;
+      let targetX = 0.5, targetY = 0.5;
+
+      function resizeMain() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        starsCanvas.width = width;
+        starsCanvas.height = height;
+      }
+      window.addEventListener('resize', resizeMain);
+      resizeMain();
+
+      document.addEventListener('mousemove', function(e) {
+        targetX = e.clientX / width;
+        targetY = e.clientY / height;
+      });
+
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 0) {
+          targetX = e.touches[0].clientX / width;
+          targetY = e.touches[0].clientY / height;
+        }
+      }, { passive: true });
+
+      let mainStars = [];
+      const MAIN_STAR_COUNT = 220;
+
+      class MainStar {
+        constructor() {
+          this.baseX = Math.random() * width;
+          this.baseY = Math.random() * height;
+          this.x = this.baseX;
+          this.y = this.baseY;
+          this.size = Math.random() * 1.8 + 0.4;
+          this.speed = (Math.random() * 0.3 + 0.1) * 0.6;
+          this.opacity = Math.random() * 0.8 + 0.2;
+          this.twinkleSpeed = Math.random() * 0.02 + 0.008;
+          this.phase = Math.random() * Math.PI * 2;
+          this.depth = Math.random() * 0.6 + 0.4;
+        }
+        update(mouseX, mouseY) {
+          const offsetX = (mouseX - 0.5) * 2 * this.depth * 60;
+          const offsetY = (mouseY - 0.5) * 2 * this.depth * 40;
+          this.x = this.baseX + offsetX;
+          this.y = this.baseY + offsetY;
+          this.phase += this.twinkleSpeed;
+          this.baseY += this.speed;
+          if (this.baseY > height + 50) {
+            this.baseY = -50;
+            this.baseX = Math.random() * width;
+          }
+        }
+        draw(ctx) {
+          const flicker = 0.6 + 0.4 * Math.sin(this.phase);
+          const alpha = this.opacity * flicker;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 240, 210, ${alpha})`;
+          ctx.fill();
+          if (this.size > 1.4) {
+            ctx.shadowColor = 'rgba(255, 240, 210, 0.15)';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+        }
+      }
+
+      class MainTinyStar {
+        constructor() {
+          this.baseX = Math.random() * width;
+          this.baseY = Math.random() * height;
+          this.x = this.baseX;
+          this.y = this.baseY;
+          this.size = Math.random() * 0.5 + 0.1;
+          this.opacity = Math.random() * 0.4 + 0.1;
+          this.phase = Math.random() * Math.PI * 2;
+          this.depth = Math.random() * 0.3 + 0.1;
+        }
+        update(mouseX, mouseY) {
+          const offsetX = (mouseX - 0.5) * 2 * this.depth * 80;
+          const offsetY = (mouseY - 0.5) * 2 * this.depth * 50;
+          this.x = this.baseX + offsetX;
+          this.y = this.baseY + offsetY;
+          this.phase += 0.02;
+        }
+        draw(ctx) {
+          const alpha = this.opacity * (0.5 + 0.5 * Math.sin(this.phase));
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200, 210, 255, ${alpha})`;
+          ctx.fill();
+        }
+      }
+
+      function initMainStars() {
+        mainStars = [];
+        for (let i = 0; i < MAIN_STAR_COUNT; i++) {
+          mainStars.push(new MainStar());
+        }
+      }
+      initMainStars();
+
+      const mainTinyStars = [];
+      for (let i = 0; i < 150; i++) {
+        mainTinyStars.push(new MainTinyStar());
+      }
+
+      function animateMain() {
+        mouseX += (targetX - mouseX) * 0.05;
+        mouseY += (targetY - mouseY) * 0.05;
+
+        ctx.clearRect(0, 0, width, height);
+        
+        const grad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width*0.7);
+        grad.addColorStop(0, 'rgba(30, 40, 60, 0.2)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+
+        for (const star of mainTinyStars) {
+          star.update(mouseX, mouseY);
+          star.draw(ctx);
+        }
+
+        for (const star of mainStars) {
+          star.update(mouseX, mouseY);
+          star.draw(ctx);
+        }
+
+        requestAnimationFrame(animateMain);
+      }
+      animateMain();
+
+      // --- АДАПТАЦИЯ ---
+      function adjustMoonSize() {
+        const wrapper = document.querySelector('.moon-wrapper');
+        if (!wrapper) return;
+        const size = Math.min(window.innerWidth * 0.5, 280, window.innerHeight * 0.35);
+        if (window.innerWidth < 600) {
+          wrapper.style.width = Math.min(size, 200) + 'px';
+          wrapper.style.height = Math.min(size, 200) + 'px';
+        }
+      }
+      window.addEventListener('resize', adjustMoonSize);
+      setTimeout(adjustMoonSize, 100);
+
+      window.addEventListener('resize', function() {
+        if (mapScreen.classList.contains('active')) {
+          generateFallingStars();
+        }
+      });
+
+    })();
+  </script>
+
+</body>
+</html>
